@@ -1,0 +1,89 @@
+trade_id,trade_date,gave,received,pick_season,pick_round,pick_number,conditional,player_name,source
+M01,2026-04-18,NYG,CIN,,,,,Dexter Lawrence,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M01,2026-04-18,CIN,NYG,2026,1,10,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M02,2026-04-24,SF,DAL,,,,,Dee Winters,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M02,2026-04-24,DAL,SF,2026,5,152,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M03,2026-04-24,MIN,PHI,,,,,Jonathan Greenard,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M03,2026-04-24,MIN,PHI,2026,7,244,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M03,2026-04-24,PHI,MIN,2026,3,98,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M03,2026-04-24,PHI,MIN,2027,3,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M04,2026-04-25,LV,NO,,,,,Tyree Wilson,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M04,2026-04-25,LV,NO,2026,7,219,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M04,2026-04-25,NO,LV,2026,5,150,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M05,2026-05-27,NYJ,SEA,,,,,Irvin Charles,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M05,2026-05-27,SEA,NYJ,2028,7,,1,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M06,2026-06-01,PHI,NE,,,,,A.J. Brown,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M06,2026-06-01,NE,PHI,2027,5,,1,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M06,2026-06-01,NE,PHI,2028,1,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M07,2026-06-11,KC,ATL,,,,,Wanya Morris,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M07,2026-06-11,KC,ATL,2027,7,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M07,2026-06-11,ATL,KC,2027,6,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M08,2026-08-10,NE,MIA,,,,,Caedan Wallace,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M08,2026-08-10,NE,MIA,2029,7,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M08,2026-08-10,MIA,NE,2028,6,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M09,2026-08-19,NYG,JAX,,,,,Daniel Faalele,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M09,2026-08-19,JAX,NYG,2027,6,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M10,2026-08-25,NYG,KC,,,,,Joshua Ezeudu,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M10,2026-08-25,KC,NYG,2028,7,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M11,2026-08-29,BAL,NYG,,,,,Basil Okoye,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M11,2026-08-29,NYG,BAL,2028,7,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M12,2026-08-29,ARI,NE,,,,,Corey Kiner,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M12,2026-08-29,NE,ARI,2028,7,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M13,2026-08-29,MIA,JAX,,,,,Quinn Ewers,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M13,2026-08-29,JAX,MIA,2028,6,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M14,2026-08-29,PIT,DAL,,,,,Broderick Jones,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M14,2026-08-29,PIT,DAL,2027,4,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M14,2026-08-29,DAL,PIT,2027,3,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M14,2026-08-29,DAL,PIT,2027,6,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M15,2026-08-30,BUF,IND,,,,,Sedrick Van Pran-Granger,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M15,2026-08-30,BUF,IND,2027,7,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M15,2026-08-30,IND,BUF,2027,6,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M16,2026-08-30,JAX,ARI,,,,,Hunter Long,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M16,2026-08-30,JAX,ARI,2028,7,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M16,2026-08-30,ARI,JAX,2027,6,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M17,2026-08-30,GB,MIA,,,,,Kyle McCord,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M17,2026-08-30,MIA,GB,2028,6,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M18,2026-08-30,PIT,GB,,,,,Kaleb Johnson,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M18,2026-08-30,GB,PIT,2028,6,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M19,2026-08-30,LV,NYJ,,,,,Jordan Meredith,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M19,2026-08-30,LV,NYJ,2029,7,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M19,2026-08-30,NYJ,LV,2027,6,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M20,2026-08-30,LA,GB,,,,,Mark Redman,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M20,2026-08-30,GB,LA,2028,7,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M21,2026-08-30,HOU,SF,,,,,Jarrett Patterson,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M21,2026-08-30,SF,HOU,2027,7,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M22,2026-08-30,DAL,HOU,,,,,Nathan Thomas,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M22,2026-08-30,HOU,DAL,2027,7,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M23,2026-08-30,MIN,NE,,,,,Walter Rouse,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M23,2026-08-30,MIN,NE,2027,7,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M23,2026-08-30,NE,MIN,2027,6,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M24,2026-08-30,LAC,CAR,,,,,TeRah Edwards,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M24,2026-08-30,CAR,LAC,2028,6,,0,,https://www.espn.com/nfl/story/_/id/48915793/2026-nfl-offseason-trade-tracker-updates-news-contracts-training-camp-preseason
+M25,2026-09-28,MIN,NYG,,,,,J.J. McCarthy,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M25,2026-09-28,NYG,MIN,2027,5,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M26,2026-09-30,PIT,DAL,,,,,Joey Porter Jr.,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M26,2026-09-30,DAL,PIT,2028,2,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M26,2026-09-30,DAL,PIT,2027,6,,1,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M27,2026-10-07,PHI,BAL,,,,,Cam Jurgens,https://www.espn.com.sg/nfl/story/_/id/50043471/2026-trade-deadline-updates-latest-news-deals-terms
+M27,2026-10-07,PHI,BAL,2027,7,,0,,https://www.espn.com.sg/nfl/story/_/id/50043471/2026-trade-deadline-updates-latest-news-deals-terms
+M27,2026-10-07,BAL,PHI,2028,2,,0,,https://www.espn.com.sg/nfl/story/_/id/50043471/2026-trade-deadline-updates-latest-news-deals-terms
+M27,2026-10-07,BAL,PHI,2027,5,,0,,https://www.espn.com.sg/nfl/story/_/id/50043471/2026-trade-deadline-updates-latest-news-deals-terms
+M28,2026-10-11,ARI,HOU,,,,,Marvin Harrison Jr.,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M28,2026-10-11,ARI,HOU,2027,6,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M28,2026-10-11,HOU,ARI,2027,2,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M28,2026-10-11,HOU,ARI,2027,7,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M29,2026-10-27,IND,SEA,,,,,Quenton Nelson,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M29,2026-10-27,SEA,IND,2027,3,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M29,2026-10-27,SEA,IND,2028,5,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M30,2026-10-27,IND,SF,,,,,DeForest Buckner,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M30,2026-10-27,SF,IND,2027,4,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M31,2026-10-29,TEN,CHI,,,,,Jeffery Simmons,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M31,2026-10-29,TEN,CHI,2028,5,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M31,2026-10-29,CHI,TEN,2027,1,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M31,2026-10-29,CHI,TEN,2028,1,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M31,2026-10-29,CHI,TEN,2027,4,,0,,https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season
+M32,2026-06-01,CLE,LA,,,,,Myles Garrett,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M32,2026-06-01,LA,CLE,,,,,Jared Verse,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M32,2026-06-01,LA,CLE,2027,1,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M32,2026-06-01,LA,CLE,2028,2,,0,,https://www.profootballrumors.com/2026/08/2026-nfl-trades
+M32,2026-06-01,LA,CLE,2029,3,,1,,https://www.profootballrumors.com/2026/08/2026-nfl-trades

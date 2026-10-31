@@ -203,8 +203,10 @@ def rating(c, a, y, td, i):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--season", type=int, default=2026)
     ap.add_argument("--through-week", type=int); ap.add_argument("--offline", action="store_true")
+    ap.add_argument("--out-dir", default="data"); ap.add_argument("--no-espn", action="store_true")
+    ap.add_argument("--no-trade-values", action="store_true", help="skip the trade-value model step")
     a = ap.parse_args(); SEA = a.season
-    os.makedirs("raw", exist_ok=True); os.makedirs("data", exist_ok=True)
+    os.makedirs("raw", exist_ok=True); os.makedirs(a.out_dir, exist_ok=True)
     games = pd.read_csv(fetch(GAMES_URL, "raw/games.csv", a.offline))
     g = games[(games.season == SEA) & (games.game_type == "REG")]
     done = g.groupby("week").apply(lambda x: x.result.notna().all(), include_groups=False)
@@ -275,7 +277,7 @@ def main():
     # ESPN
     wr_meta, wr_rows = None, []
     try:
-        wr_meta, wr_rows = espn_win_rates(SEA, a.offline)
+        if not a.no_espn: wr_meta, wr_rows = espn_win_rates(SEA, a.offline)
     except Exception as e:
         print("ESPN win rates failed:", e, file=sys.stderr)
 
@@ -366,7 +368,7 @@ def main():
                         snap_share=round(side_snaps / team_side * 100, 1) if team_side else None, s=s, q=q,
                         espn_id=(str(int(r.espn_id)) if r is not None and pd.notna(r.espn_id) else None)))
     # ---------- ESPN join (carry forward last good win rates if ESPN can't be reached) ----------
-    old_path = f"data/players_{SEA}.json"
+    old_path = f"{a.out_dir}/players_{SEA}.json"
     if not wr_rows and os.path.exists(old_path):
         old = json.load(open(old_path)); om = old["meta"]["espn"].get("meta")
         if om:
@@ -429,9 +431,31 @@ def main():
                 team_games=tg, players=len(players), with_stats=sum(1 for p in players if p["g"]), qualifiers=QUAL_TEXT,
                 espn=dict(meta=wr_meta, matched=wr_matched, total=len(wr_rows), unmatched=wr_unmatched),
                 pfr_def_weeks=sorted(int(w) for w in pfr.week.unique()) if len(pfr) else [], counts=counts)
-    json.dump(clean(dict(meta=meta, stats=S, players=players)), open(f"data/players_{SEA}.json", "w"), separators=(",", ":"), allow_nan=False)
-    print(f"wrote data/players_{SEA}.json: {len(players)} players ({meta['with_stats']} with stats); ESPN rows matched {wr_matched}/{len(wr_rows)}",
+    json.dump(clean(dict(meta=meta, stats=S, players=players)), open(f"{a.out_dir}/players_{SEA}.json", "w"), separators=(",", ":"), allow_nan=False)
+    print(f"wrote {a.out_dir}/players_{SEA}.json: {len(players)} players ({meta['with_stats']} with stats); ESPN rows matched {wr_matched}/{len(wr_rows)}",
           ("unmatched: " + ", ".join(wr_unmatched)) if wr_unmatched else "")
+
+    if a.out_dir == "data" and not a.no_trade_values and not a.no_espn:
+        trade_values(SEA, a.offline)
+
+NFLDATA = "https://raw.githubusercontent.com/nflverse/nfldata/master/data"
+CAP_LAB = "https://coleslaw510.github.io/nfl-salary-cap/data.json"
+def trade_values(season, offline):
+    """Refresh the trade dataset and model, then score current players (data/trade_values_<season>.json).
+    Needs: nflverse trades + draft value chart, Over The Cap contracts (nflverse release), the NFL Salary Cap Lab's
+    Over The Cap 2026 cap data, and prior-season builds in raw/hist/ (built here if missing)."""
+    import subprocess
+    print("trade values: refreshing inputs")
+    fetch(f"{NFLDATA}/trades.csv", "raw/trades.csv", offline, max_age_h=12)
+    fetch(f"{NFLDATA}/draft_values.csv", "raw/draft_values.csv", offline, max_age_h=24 * 30)
+    fetch(f"{REL}/contracts/historical_contracts.parquet", "raw/historical_contracts.parquet", offline, max_age_h=24)
+    if not os.path.exists("/workspace/nfl-salary-cap/data.json"):
+        fetch(CAP_LAB, "raw/otc_cap.json", offline, max_age_h=24)
+    for y in range(2018, season - 1):
+        if not os.path.exists(f"raw/hist/players_{y}.json"):
+            subprocess.run([sys.executable, __file__, "--season", str(y), "--out-dir", "raw/hist", "--no-espn"], check=True)
+    subprocess.run([sys.executable, "trades/build_trades.py"], check=True)
+    subprocess.run([sys.executable, "trades/model.py", str(season)], check=True)
 
 if __name__ == "__main__":
     import urllib.parse

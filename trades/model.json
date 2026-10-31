@@ -1,0 +1,71 @@
+{
+ "chart": "Over The Cap (Fitzgerald-Spielberger) draft value chart, via nflverse draft_values.csv",
+ "target": "log(net pick value received, OTC points)",
+ "half_life_years": 2.5,
+ "ridge": {
+  "position": 4.0,
+  "other": 0.5
+ },
+ "n_trades": 299,
+ "n_dataset": 302,
+ "date_range": [
+  "2019-03-13",
+  "2026-10-29"
+ ],
+ "coef": {
+  "const": 4.886,
+  "quality": 0.2623,
+  "age_dev": -0.0504,
+  "cap": 1.166,
+  "rookie": 0.0419,
+  "control": 0.1303,
+  "expiring": 0.0789,
+  "pedigree": 0.1391,
+  "pos_QB": 0.0907,
+  "pos_RB": 0.1344,
+  "pos_WR": 0.1381,
+  "pos_TE": 0.1405,
+  "pos_OL": 0.0567,
+  "pos_EDGE": 0.0246,
+  "pos_IDL": 0.0428,
+  "pos_LB": -0.3965,
+  "pos_CB": -0.0286,
+  "pos_S": -0.2027
+ },
+ "stretch": {
+  "mu": 5.6229,
+  "s": 1.2255
+ },
+ "sigma_log": 0.6953,
+ "weighted_r2": 0.459,
+ "loo": {
+  "n": 299,
+  "median_abs_log": 0.4687399366212821,
+  "median_ratio": 1.5979793687981465,
+  "within_x1_5": 0.40468227424749165,
+  "within_x2": 0.6889632107023411,
+  "within_range": 0.6889632107023411,
+  "spearman": 0.5734587535387321
+ },
+ "time_split": {
+  "train": "before 2025-03-01",
+  "test": "2025-03-01 onward",
+  "n": 77,
+  "median_abs_log": 0.46272080556443473,
+  "median_ratio": 1.5883898109064827,
+  "within_x1_5": 0.4155844155844156,
+  "within_x2": 0.6753246753246753,
+  "within_range": 0.6883116883116883,
+  "spearman": 0.6368510063638688
+ },
+ "baseline_median_abs_log": 0.6213145193601539,
+ "xbar": {
+  "quality": -0.15139488282328423,
+  "age_dev": 0.7931568977973293,
+  "cap": 0.44155509971233275,
+  "rookie": 0.323690416403472,
+  "control": 1.5445784128872106,
+  "expiring": 0.6336831444581751,
+  "pedigree": -0.050352667370988334
+ }
+}

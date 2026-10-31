@@ -52,7 +52,7 @@ async function setSeason(s, keep) {
   SEASON = +s; D = await load(SEASON); P = D.players; BY = D.byId; ST = D.ST;
   $$('#season-seg button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.s === SEASON));
   const m = D.meta; $('#asof').textContent = `${SEASON} regular season · through Week ${m.through_week} (${new Date(m.last_game + 'T12:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})})`;
-  footer(); initLeaders(); initTable(); glossary();
+  footer(); initLeaders(); initTable(); glossary(); loadTV().then(tvHow);
   if (!keep) route();
 }
 
@@ -88,12 +88,14 @@ async function route() {
   const params = Object.fromEntries(rest.map(x => x.split('=')));
   if (params.season && +params.season !== SEASON) { await setSeason(params.season, true); }
   const [tab, arg] = (main || 'leaders').split('=');
-  const t = ['leaders','compare','player','table','glossary'].includes(tab) ? tab : 'leaders';
+  const t = ['leaders','compare','player','table','trade','glossary'].includes(tab) ? tab : 'leaders';
   showTab(t);
   if (t === 'leaders') drawLeaders();
   if (t === 'player') { const p = arg ? resolve(arg) : null; renderPlayer(p); }
   if (t === 'compare') { cmpIds = (arg ? arg.split(',').map(resolve).filter(Boolean).map(p => p.id) : cmpIds).slice(0, 4); renderCompare(); }
   if (t === 'table') drawTable();
+  if (t === 'trade') { await loadTV(); drawTV(); }
+  if (t === 'glossary' && arg === 'trade') { await loadTV(); tvHow(); }
   window.scrollTo({top: 0, behavior: 'instant' in window ? 'instant' : 'auto'});
 }
 function resolve(tok) {
@@ -185,7 +187,9 @@ function renderPlayer(p) {
     <div class="pills"><span class="pill"><b>${p.t || 'FA'}</b></span><span class="pill">${p.p} · ${GNAME[p.gr]}</span><span class="pill"><b>${p.g}</b> of ${p.tg || '—'} games</span>${p.ss != null ? `<span class="pill"><b>${p.ss}%</b> of team ${['QB','RB','WR','TE','OL'].includes(p.gr) ? 'off.' : 'def.'} snaps</span>` : ''}${p.st && p.st !== 'ACT' ? `<span class="pill warn">Roster status: ${p.st}</span>` : ''}${p.q.includes('snap') ? '' : '<span class="pill warn">Below 25% snap qualifier</span>'}</div></div>
     <div class="ctrls"><button class="btn" id="pc-cmp">Compare ⇄</button>${p.e ? `<a class="btn ghost" href="https://www.espn.com/nfl/player/_/id/${p.e}" target="_blank" rel="noopener">ESPN ↗</a>` : ''}</div></div>
     ${!p.g ? `<div class="banner">${p.n} has no ${SEASON} regular-season games through Week ${D.meta.through_week}.${op && op.g ? ` <button class="btn" id="pc-other">See his ${o.meta.season} season (${op.g} G) →</button>` : ''}</div>` : ''}</div>
+    <div id="pc-tv"></div>
     ${Object.entries(cats).map(([c, ks]) => { const cells = ks.map(k => statCell(p, k)).join(''); return cells ? `<div class="cat-h">${c}</div><div class="statgrid">${cells}</div>` : ''; }).join('')}`;
+  loadTV().then(() => { const el = $('#pc-tv'); if (el) el.innerHTML = tvCard(p); });
   $('#pc-cmp').onclick = () => { cmpIds = [p.id]; go(`#compare=${shareSlug(p)}${sLink()}`); };
   const ob = $('#pc-other'); if (ob) ob.onclick = () => go(`#player=${p.id}&season=${o.meta.season}`);
 }
@@ -259,6 +263,73 @@ function drawTable() {
   $$('#tb th[data-k]').forEach(th => th.onclick = () => { if (tbSort === th.dataset.k) tbAsc = !tbAsc; else { tbSort = th.dataset.k; tbAsc = ST[tbSort].hb === 0; } drawTable(); });
 }
 
+// ---------- trade value ----------
+let TV = null, tvSort = 'v', tvAsc = false, tvLimit = 100;
+function loadTV() { return TV ? Promise.resolve(TV) : (TV = fetch('data/trade_values_2026.json').then(r => r.json()).then(d => (TV = d)).catch(() => (TV = {meta: null, players: {}}))); }
+const money = v => v == null ? '—' : '$' + (v / 1e6).toFixed(v >= 1e7 ? 1 : 2) + 'M';
+const pts = v => Math.round(v).toLocaleString();
+function drvText(k, t, p) {
+  switch (k) {
+    case 'quality': return `Quality ${Math.round(t.Q)}/100${t.qs.now != null && t.qs.prev != null ? ` ('26 ${Math.round(t.qs.now)} · '25 ${Math.round(t.qs.prev)})` : ''}`;
+    case 'age_dev': return `Age ${Math.floor(t.age)}`;
+    case 'cap': return t.rk ? `Rookie deal (valued at ${p.gr} market rate for his quality)` : `$${t.apy.toFixed(1)}M APY (${t.apy_pct.toFixed(1)}% of cap)`;
+    case 'control': return `${t.yl} contract yr${t.yl === 1 ? '' : 's'} of control`;
+    case 'expiring': return 'Expiring deal';
+    case 'pedigree': return 'Draft pedigree';
+    case 'position': return `${p.gr} trade market`;
+  } return k; }
+function drivers(t, p, n = 5) {
+  return Object.entries(t.drv).filter(([k, x]) => Math.abs(x) >= 0.03 && !(k === 'expiring' && t.yl > 1) && !(k === 'pedigree' && !t.ped)).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, n)
+    .map(([k, x]) => { const pc = Math.round((Math.exp(x) - 1) * 100); return `<span class="drv ${x > 0 ? 'up' : 'dn'}" title="${pc > 0 ? '+' : ''}${pc}% vs. a typical traded player">${drvText(k, t, p)} <b>${x > 0 ? '+' : '−'}</b></span>`; }).join(''); }
+function tvCard(p) {
+  const t = TV && TV.players[p.id]; const m = TV && TV.meta;
+  const head = `<div class="tv-h"><span class="cat-h" style="margin:0">Estimated trade value</span><a class="small" href="#glossary=trade">How this works</a></div>`;
+  if (!m) return '';
+  if (!t) return `<div class="card tv">${head}<p class="muted">No estimate: no ${m.season} or ${m.season - 1} playing time on file.</p></div>`;
+  if (t.status !== 'ok') return `<div class="card tv">${head}<div class="tv-main"><div class="tv-big muted">Insufficient data</div><p class="muted small">${t.why}. Rather than guess, no number is shown.</p></div></div>`;
+  const x = v => Math.max(0, Math.min(100, Math.log(v / 60) / Math.log(8000 / 60) * 100));
+  const comps = t.comps.map(c => `<div class="tv-comp"><div><b>${c.n}</b> <span class="muted small">${c.g} · age ${c.a} · ${c.ft}→${c.tt}</span></div><div class="small">${new Date(c.d + 'T12:00').toLocaleDateString(undefined, {month: 'short', year: 'numeric'})} · ${c.ret}</div><div class="tv-pts">${pts(c.v)} pts</div></div>`).join('');
+  return `<div class="card tv">${head}
+   <div class="tv-grid"><div class="tv-main">
+     <div class="tv-big">${t.desc}</div>
+     <div class="tv-sub"><b>${pts(t.v)}</b> draft-pick points <span class="muted">(range ${pts(t.lo)}–${pts(t.hi)})</span> <span class="conf ${t.conf.toLowerCase()}">${t.conf} confidence</span></div>
+     <div class="tv-range"><i style="left:${x(t.lo)}%;width:${x(t.hi) - x(t.lo)}%"></i><b style="left:${x(t.v)}%"></b>${[['7th', 208], ['3rd', 80], ['1st', 16], ['2×1st', 8]].map(([l, n]) => `<span style="left:${x(l === '2×1st' ? 2 * 1540 : {208: 210, 80: 650, 16: 1540}[n])}%">${l}</span>`).join('')}</div>
+     <div class="drvs">${drivers(t, p)}</div>
+     <div class="tv-facts small muted">Age ${t.age} · quality ${Math.round(t.Q)}/100 · ${t.rk ? 'rookie contract' : 'veteran contract'}: $${t.apy.toFixed(2)}M APY (${t.apy_pct}% of cap)${t.cap != null ? ` · 2026 cap hit ${money(t.cap)}` : ''} · ${t.yl} yr${t.yl === 1 ? '' : 's'} left${t.gtd != null ? ` · ${money(t.gtd)} guaranteed salary remaining` : ''}</div>
+     ${t.notes.length ? `<div class="tv-notes small">${t.notes.map(n => `<div>⚠ ${n}</div>`).join('')}</div>` : ''}
+   </div>
+   <div class="tv-comps"><div class="small muted" style="margin-bottom:6px">Most similar real trades</div>${comps}</div></div></div>`; }
+function initTV() { if (!$('#tv-pos').options.length) $('#tv-pos').innerHTML = `<option value="">All positions</option>` + GROUPS.map(g => `<option value="${g}">${GNAME[g]}</option>`).join(''); }
+function drawTV() {
+  initTV(); const m = TV.meta; if (!m) { $('#tv-note').textContent = 'Trade values unavailable.'; return; }
+  const B = cache[m.season] ? null : null; const src = cache[2026];
+  Promise.resolve(src).then(d => {
+    const g = $('#tv-pos').value, cf = $('#tv-conf').value, ag = +$('#tv-age').value || 99, q = norm($('#tv-q').value);
+    const okc = c => !cf || (cf === 'High' ? c === 'High' : c !== 'Low');
+    let rows = Object.entries(TV.players).filter(([, t]) => t.status === 'ok').map(([id, t]) => ({p: d.byId[id], t})).filter(r => r.p && (!g || r.p.gr === g) && okc(r.t.conf) && r.t.age < ag && (!q || r.p._n.includes(q) || (r.p.t || '').toLowerCase() === q));
+    const key = {v: r => r.t.v, age: r => r.t.age, Q: r => r.t.Q, apy: r => r.t.apy, apy_pct: r => r.t.apy_pct, yl: r => r.t.yl, cap: r => r.t.cap ?? -1, conf: r => ({High: 3, Medium: 2, Low: 1})[r.t.conf], n: r => r.p.n}[tvSort];
+    rows.sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : 0) * (tvAsc ? 1 : -1); });
+    const nIns = Object.values(TV.players).filter(t => t.status !== 'ok').length;
+    $('#tv-asof').textContent = `· as of ${m.as_of}`;
+    $('#tv-note').innerHTML = `${rows.length.toLocaleString()} players with an estimate (${nIns} more marked <i>insufficient data</i>). Values are Over The Cap draft-pick points (pick #1 = 3,000; a mid 1st ≈ 1,540; a 3rd ≈ 650). Model fit on ${m.model.n_trades} real veteran trades (${m.model.date_range[0].slice(0, 4)}–${m.model.date_range[1].slice(0, 7)}), recent trades weighted more. <a href="#glossary=trade">How it works</a>.`;
+    const cols = [['n', 'Player', 'l'], ['age', 'Age'], ['Q', 'Quality'], ['apy', 'APY'], ['apy_pct', '% cap'], ['cap', '2026 cap hit'], ['yl', 'Yrs left'], ['v', 'Value (pts)'], [null, 'Range'], [null, '≈ Picks', 'l'], ['conf', 'Confidence']];
+    $('#tv thead').innerHTML = `<tr><th class="l">#</th>${cols.map(([k, l, c]) => `<th ${k ? `data-k="${k}"` : ''} class="${c || ''} ${k === tvSort ? 'sorted' + (tvAsc ? ' asc' : '') : ''}">${l}</th>`).join('')}</tr>`;
+    $('#tv tbody').innerHTML = rows.slice(0, tvLimit).map(({p, t}, i) => `<tr data-id="${p.id}"><td class="l muted">${i + 1}</td><td class="l"><div class="pn"><img loading="lazy" src="${img(p.h)}" onerror="this.src='${PH}'"><span><b>${p.n}</b> <span class="muted small">${p.p || p.gr} · ${p.t || 'FA'}</span></span></div></td><td>${t.age.toFixed(1)}</td><td>${Math.round(t.Q)}</td><td>${t.rk ? '<span class="muted small">rookie</span> ' : ''}$${t.apy.toFixed(1)}M</td><td>${t.apy_pct.toFixed(1)}%</td><td>${money(t.cap)}</td><td>${t.yl}</td><td><b>${pts(t.v)}</b></td><td class="muted small">${pts(t.lo)}–${pts(t.hi)}</td><td class="l small">${t.desc.replace('≈ ', '')}</td><td><span class="conf ${t.conf.toLowerCase()}">${t.conf}</span></td></tr>`).join('');
+    $('#tv-more').hidden = rows.length <= tvLimit;
+    $$('#tv th[data-k]').forEach(th => th.onclick = () => { if (tvSort === th.dataset.k) tvAsc = !tvAsc; else { tvSort = th.dataset.k; tvAsc = tvSort === 'n' || tvSort === 'age'; } drawTV(); });
+  }); }
+function tvHow() {
+  const m = TV && TV.meta; if (!m) { $('#tv-how').innerHTML = '<p class="muted">Trade values unavailable.</p>'; return; }
+  const M = m.model, c = M.coef, L = M.loo, T = M.time_split, pc = x => Math.round(x * 100) + '%';
+  $('#tv-how').innerHTML = `<p><b>What the number means.</b> Each estimate is the draft-pick package a team would most likely give up for the player today, in <b>Over The Cap (Fitzgerald-Spielberger) draft-value points</b> (pick #1 = 3,000, #16 = 1,540, #32 = 1,175, #64 = 810, #96 = 596, #224 = 150). The "≈ late 1st + 3rd" line is the simplest 1–3 pick combination with about the same points. Future picks in the data are valued at the middle of their round and pushed back one round per year out.</p>
+  <p><b>Calibration data.</b> ${M.n_dataset} real veteran trades where one player moved for draft picks, ${M.date_range[0]} to ${M.date_range[1]} (including 2026 deadline deals so far): <a href="https://github.com/nflverse/nfldata/blob/master/data/trades.csv" target="_blank" rel="noopener">nflverse trade log</a> plus 2026 deals cited to <a href="https://www.profootballrumors.com/2026/08/2026-nfl-trades" target="_blank" rel="noopener">Pro Football Rumors</a>, <a href="https://www.nfl.com/news/nfl-trade-deadline-track-every-move-since-start-of-2026-regular-season" target="_blank" rel="noopener">NFL.com</a> and ESPN. Player-for-player swaps (e.g. Myles Garrett for Jared Verse + picks, Micah Parsons for Kenny Clark + picks) are excluded because the player coming back can't be priced in picks. Each trade records age, position, contract (Over The Cap) and the player's quality going in. <a href="https://github.com/Coleslaw510/nfl-player-stats-hub/blob/main/trades/trades.csv" target="_blank" rel="noopener">Full dataset (CSV)</a>.</p>
+  <p><b>Quality (0–100).</b> For each season: 65% the average of his percentile ranks in the position's key stats (e.g. EDGE: pressures, pressure rate, sacks, QB hits, TFL, ESPN win rates; WR: yards/game, yards per team dropback, EPA/target, target share), plus 35% playing time (snap share). Offensive linemen have no box-score stats, so they get 70% of snap share, raised to 80–100 if they appear on an ESPN block win-rate list. Current players blend 2026 (55%) and 2025 (45%).</p>
+  <p><b>The model</b> is a weighted ridge regression of log(points) on quality, age, contract (APY as % of cap; rookie-scale deals use what a veteran of the same quality earns at that position, since a rookie salary says nothing about value), years of control, expiring deal, young-player draft pedigree and position. ${M.n_trades} trades had complete inputs. Trades are weighted by recency with a ${M.half_life_years}-year half-life, so a trade 2½ years old counts half as much. Coefficients: quality ${c.quality > 0 ? '+' : ''}${(c.quality).toFixed(2)} per 25 pts, age ${(c.age_dev * 100).toFixed(1)}% per year, contract +${(c.cap).toFixed(2)} per 10% of cap, control ${(c.control * 100).toFixed(0) > 0 ? '+' : ''}${(c.control * 100).toFixed(0)}% per year. Because regression pulls extremes toward the middle (stars were coming out too cheap), predictions are stretched ×${M.stretch.s.toFixed(2)} around the average.</p>
+  <p><b>Why bigger contracts mean more value here:</b> in real trades, well-paid players brought back more picks, because salary signals how the league values a player. A "market minus actual pay" surplus term and guarantee share were tested and did worse in cross-validation, so they're shown on the card but not used in the formula.</p>
+  <p><b>Accuracy.</b> Leave-one-out: the median miss is ×${L.median_ratio.toFixed(2)} (actual vs predicted), ${pc(L.within_x2)} of trades within 2×, rank correlation ${L.spearman.toFixed(2)}. Out-of-time backtest (fit on trades before March 2025, test on the ${T.n} since): median miss ×${T.median_ratio.toFixed(2)}, ${pc(T.within_x2)} within 2×. Guessing the average every time misses by ×${Math.exp(M.baseline_median_abs_log).toFixed(2)}. The range shown is ±1 standard error (about ⅔ of real trades land inside it).</p>
+  <p><b>Confidence</b> is High with two qualified seasons, 10+ games and Over The Cap cap data on file; it drops for missing seasons, and QBs and OL are capped at Medium (few comparable QB-for-picks trades; no box-score stats for OL). <b>Insufficient data</b>: under 3 games this season and under 4 last season, no birth date, or no contract on file.</p>
+  <p><b>Caveats.</b> Trade prices also depend on things no public data covers: injuries, holdouts and extensions signed on arrival, the buyer's urgency, and conditional picks (counted at face value). Elite young players on rookie deals and franchise QBs almost never get traded for picks alone, so their numbers are extrapolations. Treat the estimate as a starting point, not an appraisal.</p>`; }
+
 // ---------- glossary / footer ----------
 function glossary() {
   const cats = {}; D.stats.forEach(s => (cats[s.cat] ??= []).push(s));
@@ -284,6 +355,8 @@ $('#sc-preset').onchange = () => { applyPreset(+$('#sc-preset').value); drawScat
 $('#quick').onclick = e => { const c = e.target.closest('.qc'); if (!c) return; $('#ld-stat').value = c.dataset.k; $('#ld-stat').dataset.v = c.dataset.k; ldPos(); $('#ld-pos').value = c.dataset.g; drawLeaders(); $('#ld-title').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
 $('#tb-pos').onchange = () => { tbCats(); tbLimit = 100; drawTable(); }; $('#tb-cat').onchange = () => { tbLimit = 100; drawTable(); };
 $('#tb-q').oninput = drawTable; $('#tb-qual').onchange = drawTable; $('#tb-more').onclick = () => { tbLimit += 200; drawTable(); };
+$('#tv tbody').onclick = e => { const tr = e.target.closest('tr[data-id]'); if (tr) go(`#player=${tr.dataset.id}`); };
+['#tv-pos', '#tv-conf', '#tv-age'].forEach(x => $(x).onchange = () => { tvLimit = 100; drawTV(); }); $('#tv-q').oninput = drawTV; $('#tv-more').onclick = () => { tvLimit += 200; drawTV(); };
 $('#tb tbody').onclick = e => { const tr = e.target.closest('tr[data-id]'); if (tr) go(`#player=${tr.dataset.id}${sLink()}`); };
 $('#cmp-set').onchange = renderCompare; $('#cmp-all').onchange = renderCompare;
 $('#cmp-share').onclick = () => { const u = location.origin + location.pathname + cmpHash(); history.replaceState(null, '', cmpHash()); (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => toast('Share link copied'), () => toast(u)); };

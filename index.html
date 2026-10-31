@@ -26,6 +26,7 @@
     <a href="#compare" data-tab="compare">Compare</a>
     <a href="#player" data-tab="player">Player</a>
     <a href="#table" data-tab="table">Leaderboards</a>
+    <a href="#trade" data-tab="trade">Trade Value</a>
     <a href="#glossary" data-tab="glossary">Glossary</a>
   </nav>
 </header>
@@ -104,8 +105,27 @@
     </div>
   </section>
 
+  <!-- TRADE VALUE -->
+  <section class="tab" id="tab-trade" hidden>
+    <div class="card">
+      <div class="card-head">
+        <h2>Trade value leaderboard <span class="muted small" id="tv-asof"></span></h2>
+        <div class="ctrls">
+          <select id="tv-pos" aria-label="Position group"></select>
+          <select id="tv-conf" aria-label="Confidence"><option value="">Any confidence</option><option value="Medium">Medium or high</option><option value="High">High only</option></select>
+          <select id="tv-age" aria-label="Age"><option value="">Any age</option><option value="25">Under 25</option><option value="28">Under 28</option><option value="30">Under 30</option></select>
+          <input id="tv-q" type="search" placeholder="Filter by name or team">
+        </div>
+      </div>
+      <p class="note" id="tv-note"></p>
+      <div class="table-wrap"><table id="tv"><thead></thead><tbody></tbody></table></div>
+      <button class="btn more" id="tv-more">Show more</button>
+    </div>
+  </section>
+
   <!-- GLOSSARY -->
   <section class="tab" id="tab-glossary" hidden>
+    <div class="card" id="tv-how-card"><div class="card-head"><h2>How trade value works</h2></div><div id="tv-how" class="prose"></div></div>
     <div class="card"><div class="card-head"><h2>Stat glossary</h2></div><div id="gloss"></div></div>
     <div class="card"><div class="card-head"><h2>Qualifiers, ranks &amp; percentiles</h2></div><div id="quals" class="prose"></div></div>
   </section>
