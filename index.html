@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090d15">
+<title>NFL Player Stats Hub · 2026</title>
+<link rel="preconnect" href="https://static.www.nfl.com">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#leaders"><span class="logo">◆</span><span><b>Player Stats Hub</b><small id="asof">Loading…</small></span></a>
+    <div class="search" id="gsearch-wrap">
+      <input id="gsearch" type="search" placeholder="Search any player…" autocomplete="off" spellcheck="false" aria-label="Search players">
+      <div class="ta" id="gsearch-ta" role="listbox"></div>
+    </div>
+    <div class="season seg" id="season-seg">
+      <button data-s="2026" aria-pressed="true">2026</button><button data-s="2025">2025</button>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <a href="#leaders" data-tab="leaders">Leaders</a>
+    <a href="#compare" data-tab="compare">Compare</a>
+    <a href="#player" data-tab="player">Player</a>
+    <a href="#table" data-tab="table">Leaderboards</a>
+    <a href="#glossary" data-tab="glossary">Glossary</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <!-- LEADERS -->
+  <section class="tab" id="tab-leaders">
+    <div class="quick" id="quick"></div>
+    <div class="card">
+      <div class="card-head">
+        <h2 id="ld-title">Leaders</h2>
+        <div class="ctrls">
+          <select id="ld-stat" aria-label="Stat"></select>
+          <select id="ld-pos" aria-label="Position"></select>
+          <select id="ld-n" aria-label="Top N"><option>5</option><option selected>10</option><option>15</option><option>20</option><option>25</option></select>
+          <label class="chk"><input type="checkbox" id="ld-q" checked> Qualified only</label>
+        </div>
+      </div>
+      <p class="note" id="ld-note"></p>
+      <div class="chart-box" id="ld-box"><canvas id="ld-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h2>Scatter</h2>
+        <div class="ctrls">
+          <select id="sc-preset" aria-label="Preset"></select>
+          <select id="sc-x" aria-label="X stat"></select>
+          <select id="sc-y" aria-label="Y stat"></select>
+          <select id="sc-pos" aria-label="Position"></select>
+        </div>
+      </div>
+      <p class="note" id="sc-note"></p>
+      <div class="chart-box tall"><canvas id="sc-chart"></canvas></div>
+    </div>
+  </section>
+
+  <!-- COMPARE -->
+  <section class="tab" id="tab-compare" hidden>
+    <div class="card hero-card">
+      <div class="card-head"><h2>Compare players</h2><button class="btn ghost" id="cmp-share">Copy share link</button></div>
+      <div class="cmp-pick" id="cmp-pick"></div>
+      <div class="ctrls" style="margin-top:10px">
+        <label class="small muted">Stat set <select id="cmp-set"></select></label>
+        <label class="chk"><input type="checkbox" id="cmp-all"> Show every stat (all categories)</label>
+      </div>
+      <div id="cmp-banner"></div>
+    </div>
+    <div class="grid2 cmp-grid">
+      <div class="card"><div class="card-head"><h2>Percentile profile</h2><span class="muted small" id="cmp-radar-note"></span></div><div class="chart-box radar"><canvas id="cmp-radar"></canvas></div></div>
+      <div class="card"><div class="card-head"><h2>Head to head</h2></div><div id="cmp-score"></div></div>
+    </div>
+    <div class="card"><div id="cmp-table"></div></div>
+  </section>
+
+  <!-- PLAYER -->
+  <section class="tab" id="tab-player" hidden>
+    <div class="card"><div class="search big"><input id="psearch" type="search" placeholder="Find a player (e.g. Ja'Marr Chase, Maxx Crosby)…" autocomplete="off" spellcheck="false"><div class="ta" id="psearch-ta"></div></div></div>
+    <div id="pcard"></div>
+  </section>
+
+  <!-- TABLE -->
+  <section class="tab" id="tab-table" hidden>
+    <div class="card">
+      <div class="card-head">
+        <h2>Full leaderboards</h2>
+        <div class="ctrls">
+          <select id="tb-pos" aria-label="Position group"></select>
+          <select id="tb-cat" aria-label="Category"></select>
+          <input id="tb-q" type="search" placeholder="Filter by name or team">
+          <label class="chk"><input type="checkbox" id="tb-qual" checked> Qualified only</label>
+        </div>
+      </div>
+      <p class="note" id="tb-note"></p>
+      <div class="table-wrap"><table id="tb"><thead></thead><tbody></tbody></table></div>
+      <button class="btn more" id="tb-more">Show more</button>
+    </div>
+  </section>
+
+  <!-- GLOSSARY -->
+  <section class="tab" id="tab-glossary" hidden>
+    <div class="card"><div class="card-head"><h2>Stat glossary</h2></div><div id="gloss"></div></div>
+    <div class="card"><div class="card-head"><h2>Qualifiers, ranks &amp; percentiles</h2></div><div id="quals" class="prose"></div></div>
+  </section>
+
+  <footer class="foot" id="footer"></footer>
+</main>
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
