@@ -102,6 +102,7 @@ async function route() {
 function resolve(tok) {
   if (BY[tok]) return BY[tok];
   const s = slug(tok.replace(/-/g, ' ')); let c = P.filter(p => slug(p.n) === s);
+  if (!c.length) { const s2 = s.replace(/-/g, ''); c = P.filter(p => slug(p.n).replace(/-/g, '') === s2); }   // hyphenated names (Smith-Njigba)
   if (!c.length) { const parts = s.split('-'); c = P.filter(p => parts.every(t => p._toks.includes(t))); }
   if (!c.length) c = searchPlayers(tok.replace(/-/g, ' '), 5);
   return c.sort((a, b) => fame(b) - fame(a))[0] || null;
