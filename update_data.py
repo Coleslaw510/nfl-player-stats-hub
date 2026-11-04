@@ -99,6 +99,27 @@ def espn_win_rates(season, offline):
                 fetched=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), rows=len(rows))
     return meta, rows
 
+ESPN_ROSTER = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{id}/roster"
+def espn_rosters(offline):
+    """Current ESPN team rosters (all 32 teams): espn_id -> team, and normalized name -> {teams}."""
+    os.makedirs("raw/espn_rosters", exist_ok=True)
+    tl = json.load(open(fetch("https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams", "raw/espn_rosters/_teams.json", offline)))
+    by_id, by_name = {}, {}
+    for t in tl["sports"][0]["leagues"][0]["teams"]:
+        t = t["team"]; ab = ESPN_TEAM.get(t["abbreviation"], {"LAR": "LA"}.get(t["abbreviation"], t["abbreviation"]))
+        j = json.load(open(fetch(ESPN_ROSTER.format(id=t["id"]), f"raw/espn_rosters/{t['abbreviation']}.json", offline)))
+        for g in j.get("athletes", []):
+            for a_ in g.get("items", []):
+                by_id[str(a_["id"])] = ab; by_name.setdefault(norm(a_["fullName"]), set()).add(ab)
+    return by_id, by_name
+
+def load_overrides():
+    """trades/team_overrides.csv: manual current-team fixes (gsis_id, name, team, date, source). Empty team = free agent."""
+    f = "trades/team_overrides.csv"
+    if not os.path.exists(f): return {}
+    o = pd.read_csv(f, dtype=str).fillna("")
+    return {r.gsis_id: dict(team=r.team or None, date=r.date, source=r.source, name=r.name) for r in o.itertuples()}
+
 GROUP = {"QB": "QB", "RB": "RB", "FB": "RB", "WR": "WR", "TE": "TE", "T": "OL", "G": "OL", "C": "OL", "OT": "OL", "OG": "OL", "OL": "OL",
          "DE": "EDGE", "OLB": "EDGE", "DT": "IDL", "NT": "IDL", "DL": "IDL", "ILB": "LB", "MLB": "LB", "LB": "LB",
          "CB": "CB", "FS": "S", "SS": "S", "S": "S", "DB": "S", "SAF": "S", "K": "ST", "P": "ST", "LS": "ST"}
@@ -285,6 +306,36 @@ def main():
     ros_l = ros.sort_values("week").groupby("gsis_id").tail(1).set_index("gsis_id") if "week" in ros else ros.set_index("gsis_id")
     ids = set(agg.index) | set(sn.index) | set(ros_l[ros_l.status.isin(["ACT", "RES", "INA", "DEV", "EXE"])].index)
     plx = pl.set_index("gsis_id")
+    # ---------- current team ----------
+    # priority: manual override (cited) > ESPN's live team roster > latest nflverse weekly roster (unless CUT) > last team with stats
+    cur_rosters = None
+    if a.out_dir == "data" and not a.no_espn:
+        try: cur_rosters = espn_rosters(a.offline)
+        except Exception as e: print("ESPN rosters unavailable:", e, file=sys.stderr)
+    overrides = load_overrides() if a.out_dir == "data" else {}
+    team_changes = []
+    # per-game team for each player (weekly stats + snap counts), to credit traded players' team totals correctly
+    pg_team = {(r_.player_id, r_.game_id): r_.team for r_ in wk[["player_id", "game_id", "team"]].itertuples()}
+    for r_ in snaps.dropna(subset=["gsis"])[["gsis", "game_id", "team"]].itertuples(): pg_team.setdefault((r_.gsis, r_.game_id), r_.team)
+    pteams = {}
+    for (pid_, gid_), t_ in pg_team.items(): pteams.setdefault(pid_, {}).setdefault(t_, []).append(gid_)
+    gweek = dict(zip(gw.game_id, gw.week))
+    team_games_w = {}
+    for r_ in gw.itertuples():
+        for t_ in (r_.home_team, r_.away_team): team_games_w.setdefault(t_, []).append((r_.week, r_.game_id))
+    def team_spans(pid_):
+        """[(team, [game_ids the player was on that team for])]: earlier team(s) from week 1 to their last appearance, the
+        latest team from its first appearance on (a traded player's denominators are the games he was on each roster)."""
+        tm = pteams.get(pid_)
+        if not tm: return []
+        order = sorted(tm, key=lambda t_: max(gweek.get(g_, 0) for g_ in tm[t_]))
+        out_, start = [], 1
+        for i_, t_ in enumerate(order):
+            wks = [gweek.get(g_, 0) for g_ in tm[t_]]
+            lo_ = min(wks) if i_ else 1; hi_ = W if i_ == len(order) - 1 else max(wks)
+            if i_ and i_ == len(order) - 1: lo_ = min(wks)
+            out_.append((t_, [g_ for w_, g_ in team_games_w.get(t_, []) if lo_ <= w_ <= hi_]))
+        return out_
     out = []
     for pid in ids:
         if not isinstance(pid, str) or not pid: continue
@@ -296,13 +347,30 @@ def main():
               (r.position if r is not None else None) or (last.loc[pid].position if pid in last.index else None) or (x.position if x is not None else None)
         grp = GROUP.get(pos)
         if grp in (None, "ST"): continue
-        team = last.loc[pid].team if pid in last.index else (r.team if r is not None else None)
+        stat_team = last.loc[pid].team if pid in last.index else None
+        team = r.team if r is not None and r.status != "CUT" else (None if r is not None else stat_team)
+        old_logic = stat_team or (r.team if r is not None else None)
+        why = "nflverse weekly roster (week %s)" % (int(r.week) if r is not None and "week" in r else "?") if team else None
+        if cur_rosters:
+            eid = str(int(r.espn_id)) if r is not None and pd.notna(r.espn_id) else None
+            et = cur_rosters[0].get(eid) if eid else None
+            if et is None:
+                nm = cur_rosters[1].get(norm(name), set())
+                if len(nm) == 1: et = next(iter(nm))
+            if et: team, why = et, "ESPN team roster (fetched %s)" % dt.date.today()
+            elif r is not None and r.status == "CUT": team, why = None, "released (nflverse status CUT; on no ESPN roster)"
+        if pid in overrides: team, why = overrides[pid]["team"], "manual override: " + overrides[pid]["source"]
+        spans = team_spans(pid)
+        prev_teams = [t_ for t_, _ in spans if t_ != team]
+        if team != old_logic and (G_ := len(gp.get(pid, set()))) >= 0:
+            team_changes.append(dict(id=pid, n=name, pos=pos, old=old_logic, new=team, why=why, prev=prev_teams, g=G_))
         head = (last.loc[pid].headshot_url if pid in last.index else None) or (r.headshot_url if r is not None else None) or (x.headshot if x is not None else None)
         status = r.status if r is not None else None
         s = {}
         A = agg.loc[pid] if pid in agg.index else None
         games_set = gp.get(pid, set()); G = len(games_set)
-        team_g = int(tg.get(team, 0)) or None
+        span_games = [g_ for _, gl in spans for g_ in gl] if spans else [g_ for _, g_ in team_games_w.get(team, [])]
+        team_g = len(set(span_games)) or None
         v = lambda k: float(A[k]) if A is not None and k in A and pd.notna(A[k]) else 0.0
         if A is not None:
             pa, cmp_, py, ptd, pint = v("attempts"), v("completions"), v("passing_yards"), v("passing_tds"), v("passing_interceptions")
@@ -317,8 +385,8 @@ def main():
                 s.update(targets=tgt, rec=rec, rec_yds=ryds, rec_ypg=ryds / max(G, 1), rec_td=v("receiving_tds"), catch_pct=rec / tgt * 100,
                          ypt=ryds / tgt, air_yds=v("receiving_air_yards"), yac=v("receiving_yards_after_catch"))
                 if rec: s["ypr"] = ryds / rec
-                tdb = sum(team_db.get((gid, team), 0) for gid in games_set)
-                tat = sum(team_att.get((gid, team), 0) for gid in games_set)
+                tdb = sum(team_db.get((gid, pg_team.get((pid, gid), team)), 0) for gid in games_set)
+                tat = sum(team_att.get((gid, pg_team.get((pid, gid), team)), 0) for gid in games_set)
                 if tdb: s["ypdb"] = ryds / tdb
                 if tat: s["tgt_share"] = tgt / tat * 100
             if car > 0 or tgt > 0:
@@ -356,7 +424,9 @@ def main():
             s["_tkatt"] = tk_att
         # qualifiers
         side_snaps = osn if grp in OFF else dsn
-        team_side = (tsn.loc[team].o if grp in OFF else tsn.loc[team].d) if team in tsn.index else 0
+        col_ = "o" if grp in OFF else "d"
+        span_pairs = [(g_, t_) for t_, gl in spans for g_ in gl] if spans else [(g_, team) for _, g_ in team_games_w.get(team, [])]
+        team_side = float(sum(team_snaps[col_].get((g_, t_), 0) or 0 for g_, t_ in span_pairs)) if span_pairs else 0
         q = {"snap": bool(team_side and side_snaps >= .25 * team_side) or (not team_side and team_g and G >= team_g / 2), "none": True}
         tgames = team_g or max(G, 1)
         q["pass"] = s.get("pass_att", 0) >= 14 * tgames
@@ -364,7 +434,7 @@ def main():
         q["recv"] = s.get("rec", 0) >= 1.875 * tgames
         q["cov"] = s.get("tgt_allowed", 0) >= 2 * tgames and q["snap"]
         q["tkl"] = s.pop("_tkatt", 0) >= 2 * tgames
-        out.append(dict(id=pid, name=name, team=team, pos=pos, grp=grp, head=head, status=status, g=G, tg=team_g,
+        out.append(dict(id=pid, name=name, team=team, prev=prev_teams, pos=pos, grp=grp, head=head, status=status, g=G, tg=team_g,
                         snap_share=round(side_snaps / team_side * 100, 1) if team_side else None, s=s, q=q,
                         espn_id=(str(int(r.espn_id)) if r is not None and pd.notna(r.espn_id) else None)))
     # ---------- ESPN join (carry forward last good win rates if ESPN can't be reached) ----------
@@ -426,9 +496,10 @@ def main():
         if isinstance(h, str) and h.startswith(HEAD_PREFIX): h = "~" + h[len(HEAD_PREFIX):]
         players.append(dict(id=p["id"], n=p["name"], t=cl(p["team"]), p=cl(p["pos"]), gr=p["grp"], h=cl(h), st=cl(p["status"]), g=p["g"], tg=p["tg"],
                             ss=p["snap_share"], q=[k for k, v in p["q"].items() if v and k != "none"], s={k: rnd(v) for k, v in p["s"].items()},
-                            r=p.get("r", {}), wr=p.get("wr"), e=p["espn_id"]))
+                            r=p.get("r", {}), wr=p.get("wr"), e=p["espn_id"], **({"pt": p["prev"]} if p["prev"] else {})))
     meta = dict(season=SEA, through_week=W, last_game=last_date, built=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                team_games=tg, players=len(players), with_stats=sum(1 for p in players if p["g"]), qualifiers=QUAL_TEXT,
+                team_games=tg, players=len(players), team_source="Current team: ESPN team rosters (fetched at build) > nflverse weekly roster > trades/team_overrides.csv overrides win; 'pt' = earlier 2026 teams",
+                team_changes=team_changes, with_stats=sum(1 for p in players if p["g"]), qualifiers=QUAL_TEXT,
                 espn=dict(meta=wr_meta, matched=wr_matched, total=len(wr_rows), unmatched=wr_unmatched),
                 pfr_def_weeks=sorted(int(w) for w in pfr.week.unique()) if len(pfr) else [], counts=counts)
     json.dump(clean(dict(meta=meta, stats=S, players=players)), open(f"{a.out_dir}/players_{SEA}.json", "w"), separators=(",", ":"), allow_nan=False)
