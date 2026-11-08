@@ -89,12 +89,13 @@ async function route() {
   const params = Object.fromEntries(rest.map(x => x.split('=')));
   if (params.season && +params.season !== SEASON) { await setSeason(params.season, true); }
   const [tab, arg] = (main || 'leaders').split('=');
-  const t = ['leaders','compare','player','table','trade','glossary'].includes(tab) ? tab : 'leaders';
+  const t = ['leaders','rankings','compare','player','table','trade','glossary'].includes(tab) ? tab : 'leaders';
   showTab(t);
   if (t === 'leaders') drawLeaders();
   if (t === 'player') { const p = arg ? resolve(arg) : null; renderPlayer(p); }
   if (t === 'compare') { cmpIds = (arg ? arg.split(',').map(resolve).filter(Boolean).map(p => p.id) : cmpIds).slice(0, 4); renderCompare(); }
   if (t === 'table') drawTable();
+  if (t === 'rankings') { if (SEASON !== 2026) { await setSeason(2026, true); OTHER = await load(2025); } const g = (arg || 'all').toUpperCase(); const ng = g === 'ALL' || !GROUPS.includes(g) ? 'all' : g; if (ng !== prGrp) { prGrp = ng; prLimit = 50; $('#pr-sub').value = ''; } await drawPR(); prHow(); }
   if (t === 'trade') { await loadTV(); drawTV(); }
   if (t === 'glossary' && arg === 'trade') { await loadTV(); tvHow(); }
   window.scrollTo({top: 0, behavior: 'instant' in window ? 'instant' : 'auto'});
@@ -186,12 +187,13 @@ function renderPlayer(p) {
   const cats = {}; D.stats.filter(s => s.groups.includes(p.gr)).forEach(s => (cats[s.cat] ??= []).push(s.k));
   const o = otherSeason(), op = o && o.byId[p.id];
   $('#pcard').innerHTML = `<div class="card"><div class="pc-head"><img src="${img(p.h)}" onerror="this.src='${PH}'" alt=""><div style="flex:1;min-width:200px"><h1>${p.n}</h1>
-    <div class="pills"><span class="pill"><b>${tmL(p)}</b></span><span class="pill">${p.p} · ${GNAME[p.gr]}</span><span class="pill"><b>${p.g}</b> of ${p.tg || '—'} games</span>${p.ss != null ? `<span class="pill"><b>${p.ss}%</b> of team ${['QB','RB','WR','TE','OL'].includes(p.gr) ? 'off.' : 'def.'} snaps</span>` : ''}${p.st && p.st !== 'ACT' ? `<span class="pill warn">Roster status: ${p.st}</span>` : ''}${p.q.includes('snap') ? '' : '<span class="pill warn">Below 25% snap qualifier</span>'}</div></div>
+    <div class="pills"><span class="pill"><b>${tmL(p)}</b></span><span class="pill">${p.p} · ${GNAME[p.gr]}</span><span class="pill"><b>${p.g}</b> of ${p.tg || '—'} games</span>${p.ss != null ? `<span class="pill"><b>${p.ss}%</b> of team ${['QB','RB','WR','TE','OL'].includes(p.gr) ? 'off.' : 'def.'} snaps</span>` : ''}<span id="pc-pr"></span>${p.st && p.st !== 'ACT' ? `<span class="pill warn">Roster status: ${p.st}</span>` : ''}${p.q.includes('snap') ? '' : '<span class="pill warn">Below 25% snap qualifier</span>'}</div></div>
     <div class="ctrls"><button class="btn" id="pc-cmp">Compare ⇄</button>${p.e ? `<a class="btn ghost" href="https://www.espn.com/nfl/player/_/id/${p.e}" target="_blank" rel="noopener">ESPN ↗</a>` : ''}</div></div>
     ${!p.g ? `<div class="banner">${p.n} has no ${SEASON} regular-season games through Week ${D.meta.through_week}.${op && op.g ? ` <button class="btn" id="pc-other">See his ${o.meta.season} season (${op.g} G) →</button>` : ''}</div>` : ''}</div>
     <div id="pc-tv"></div>
     ${Object.entries(cats).map(([c, ks]) => { const cells = ks.map(k => statCell(p, k)).join(''); return cells ? `<div class="cat-h">${c}</div><div class="statgrid">${cells}</div>` : ''; }).join('')}`;
   loadTV().then(() => { const el = $('#pc-tv'); if (el) el.innerHTML = tvCard(p); });
+  if (SEASON === 2026) Promise.all([loadPR(), load(2026)]).then(([, d]) => { cache2026 = d; const x = prRank(p.id), el = $('#pc-pr'); if (el && x) el.innerHTML = `<a class="pill pr-pill" href="#rankings=${x.g}" style="text-decoration:none">Power ranking <b>#${x.r.rk} ${x.g}</b> · ${x.r.sc.toFixed(1)}${mvBadge(x.r, PR.meta)}</a>`; });
   $('#pc-cmp').onclick = () => { cmpIds = [p.id]; go(`#compare=${shareSlug(p)}${sLink()}`); };
   const ob = $('#pc-other'); if (ob) ob.onclick = () => go(`#player=${p.id}&season=${o.meta.season}`);
 }
@@ -336,6 +338,59 @@ function tvHow() {
   <p><b>Confidence</b> is High with two qualified seasons, 10+ games and Over The Cap cap data on file; it drops for missing seasons, and QBs and OL are capped at Medium (few comparable QB-for-picks trades; no box-score stats for OL). <b>Insufficient data</b>: under 3 games this season and under 4 last season, no birth date, or no contract on file.</p>
   <p><b>Caveats.</b> Trade prices also depend on things no public data covers: injuries, holdouts and extensions signed on arrival, the buyer's urgency, and conditional picks (counted at face value). Elite young players on rookie deals and franchise QBs almost never get traded for picks alone, so their numbers are extrapolations. Treat the estimate as a starting point, not an appraisal.</p>`; }
 
+// ---------- power rankings ----------
+let PR = null, prGrp = 'all', prLimit = 50;
+function loadPR() { return PR ? Promise.resolve(PR) : (PR = fetch('data/rankings_2026.json').then(r => r.json()).then(d => (PR = d)).catch(() => (PR = {meta: null, groups: {}}))); }
+function mvBadge(r, m) {
+  if (!m || m.prev_week == null || r.mv == null) return '<span class="mv eq" title="No earlier week on file">·</span>';
+  const pw = `Week ${m.prev_week}`;
+  if (r.mv === 'new') return `<span class="mv new" title="Not ranked at this position through ${pw}">NEW</span>`;
+  if (r.mv > 0) return `<span class="mv up" title="Up ${r.mv} from #${r.pr} (${pw})">▲${r.mv}</span>`;
+  if (r.mv < 0) return `<span class="mv dn" title="Down ${-r.mv} from #${r.pr} (${pw})">▼${-r.mv}</span>`;
+  return `<span class="mv eq" title="Same spot as ${pw} (#${r.pr})">–</span>`;
+}
+const PR_STAT = k => k === 'ss' ? null : ST[k];
+function prKey(p, k) { if (k === 'ss') return p.ss != null ? p.ss + '%' : '—'; const s = ST[k]; if (!s) return '—';
+  if (s.q === 'espn' && p.s[k] == null) return '<span class="muted">n/p</span>'; return fv(k, p.s[k]); }
+function prRank(id) { if (!PR || !PR.groups) return null; const p = cache2026 && cache2026.byId[id]; if (!p) return null; const r = (PR.groups[p.gr] || []).find(x => x.id === id); return r ? {r, g: p.gr} : null; }
+let cache2026 = null;
+const PR_SHORT = {'Efficiency':'Eff','Passing production':'Pass prod','Rushing':'Rush','Ball security & sacks':'Security','Availability & role':'Avail','Rushing production':'Rush prod','Rushing efficiency':'Rush eff','Receiving':'Rec','Scrimmage total':'Scrim','Production':'Prod','Earning targets':'Targets','Tracking (NGS)':'NGS','Snap share (blocking role)':'Snaps','Availability':'Avail','ESPN pass block win rate':'PBWR','ESPN run block win rate':'RBWR','Playing time':'Snaps','Team pass protection':'Team pass pro','Team run blocking':'Team run','Pass rush':'Rush','Run defense':'Run D','Playmaking':'Plays','Tackling':'Tackling','Tackling & run defense':'Tkl/Run D','Coverage':'Cov','Tackling & run support':'Tkl/Run'};
+const prShort = l => PR_SHORT[l] || l;
+async function drawPR() {
+  await loadPR(); const m = PR.meta; const d = cache2026 = await load(2026);
+  if (!m) { $('#pr-body').innerHTML = '<p class="muted">Power rankings unavailable.</p>'; return; }
+  $('#pr-asof').textContent = `· ${m.season} through Week ${m.through_week}${m.prev_week != null ? ` · arrows vs Week ${m.prev_week}` : ''}`;
+  $('#pr-chips').innerHTML = [['all', 'Top 5 · all positions'], ...GROUPS.map(g => [g, g])].map(([g, l]) => `<button data-g="${g}" class="${g === prGrp ? 'on' : ''}">${l}</button>`).join('');
+  const q = norm($('#pr-q').value || '');
+  const sub = $('#pr-sub');
+  if (prGrp === 'all') {
+    sub.hidden = true; $('#pr-more').hidden = true;
+    $('#pr-note').innerHTML = `The best players at every position, by a composite of all the hub's stats for that position (0–100; 50 = an average qualified starter). <span class="mv up">▲</span> <span class="mv dn">▼</span> = spots gained or lost since Week ${m.prev_week ?? '—'}, <span class="mv eq">–</span> = no change, <span class="mv new">NEW</span> = not ranked last week. Click a position for the full list, or a player for his card.`;
+    $('#pr-body').innerHTML = `<div class="pr-grid">${GROUPS.map(g => { const rows = (PR.groups[g] || []).filter(r => d.byId[r.id] && (!q || d.byId[r.id]._n.includes(q) || (d.byId[r.id].t || '').toLowerCase() === q)).slice(0, 5);
+      return `<div class="pr-col"><h3>${GNAME[g]} <a href="#rankings=${g}">All ${(PR.groups[g] || []).length} →</a></h3>${rows.map(r => { const p = d.byId[r.id];
+        return `<a class="pr-row" href="#player=${p.id}"><span class="i">${r.rk}</span>${mvBadge(r, m)}<img loading="lazy" src="${img(p.h)}" onerror="this.src='${PH}'"><span class="n"><b>${p.n}</b><span>${p.p || p.gr} · ${tmL(p)}</span></span><span class="pr-sc">${r.sc.toFixed(1)}</span></a>`; }).join('') || '<p class="muted small">No match.</p>'}</div>`; }).join('')}</div>`;
+    return;
+  }
+  const g = prGrp, M = m.method[g], all = PR.groups[g] || [];
+  const subs = [...new Set(all.map(r => d.byId[r.id]?.p).filter(Boolean))].sort();
+  if (subs.length > 1) { const cur = sub.value; sub.innerHTML = `<option value="">All ${g} (${subs.join('/')})</option>` + subs.map(x => `<option>${x}</option>`).join(''); sub.value = subs.includes(cur) ? cur : ''; sub.hidden = false; } else { sub.hidden = true; sub.value = ''; }
+  const sp = sub.hidden ? '' : sub.value;
+  const rows = all.filter(r => { const p = d.byId[r.id]; return p && (!sp || p.p === sp) && (!q || p._n.includes(q) || (p.t || '').toLowerCase() === q); });
+  const keys = M.keys.filter(k => k === 'ss' || ST[k]);
+  $('#pr-note').innerHTML = `${all.length} qualified ${GNAME[g].toLowerCase()} (${M.qual}). Score 0–100: 50 = average qualified ${g}. Components: ${M.comps.map(c => `${c.l} ${c.w}%`).join(' · ')}. Hover an arrow for last week's rank. <a href="#rankings=${g}" onclick="document.getElementById('pr-how').scrollIntoView({behavior:'smooth'});return false">Method</a>`;
+  $('#pr-body').innerHTML = `<div class="table-wrap"><table id="pr-tbl"><thead><tr><th class="l">#</th><th class="l">±</th><th class="l">Player</th><th class="l">Score</th>${keys.map(k => `<th title="${ST[k]?.desc || ''}">${k === 'ss' ? 'Snap %' : ST[k].label.replace(' (ESPN)', '').replace(' (PFR)', '').replace(' (YPRR proxy)', ' (YPRR proxy)').replace('Rec yds / team dropback', 'Rec yds / team dropback')}</th>`).join('')}<th class="l hide-sm">Components (0–100)</th></tr></thead><tbody>${rows.slice(0, prLimit).map(r => { const p = d.byId[r.id];
+    return `<tr data-id="${p.id}"><td class="l rk">${r.rk}</td><td class="l">${mvBadge(r, m)}</td><td class="l"><div class="pn"><img loading="lazy" src="${img(p.h)}" onerror="this.src='${PH}'"><span><b>${p.n}</b> <span class="muted small">${p.p || p.gr} · ${tmL(p)} · ${p.g} G</span></span></div></td><td class="l sc"><div class="scbar"><b class="pr-sc">${r.sc.toFixed(1)}</b><i style="--w:${r.sc}%"></i></div></td>${keys.map(k => `<td>${prKey(p, k)}</td>`).join('')}<td class="l hide-sm"><div class="comps">${Object.entries(r.c).map(([l, v]) => `<span class="comp" title="${l}">${prShort(l)} <b>${v}</b></span>`).join('')}</div></td></tr>`; }).join('')}</tbody></table></div>`;
+  $('#pr-more').hidden = rows.length <= prLimit;
+}
+function prHow() { loadPR().then(() => { const m = PR.meta; if (!m) return;
+  const lab = s => s.label || (ST[s.k.replace('/g', '')] ? ST[s.k.replace('/g', '')].label.replace(' (ESPN)', '').replace(' (PFR)', '') + (s.k.endsWith('/g') ? ' per game' : '') : s.k);
+  $('#pr-how').innerHTML = `<p><b>What it is.</b> A "best player" ranking at each position built from every relevant stat the hub has for ${m.season}: nflverse play-by-play efficiency (EPA, success rate, CPOE), production and per-game volume, Next Gen Stats (separation, YAC over expected, rush yards over expected), Pro Football Reference defensive charting (pressures, coverage, missed tackles), ESPN win rates where published, and playing time.</p>
+  <p><b>How a score is built.</b> (1) Only players who pass the position's playing-time qualifier are ranked. (2) Each stat becomes a z-score within that position's pool, flipped where lower is better and capped at ±3 SD. A missing value counts as average. (3) Rate stats are <b>shrunk toward average for small samples</b>: z × n / (n + k), where n is the sample (dropbacks, carries, targets, coverage targets, snaps) and k is shown below. (4) Stats are averaged into components, and the components are weighted as listed. (5) The total is shrunk again for games played (× g / (g + 1.5)), re-standardized and mapped to <b>0–100</b>: 50 = an average qualified player at the position, 16 points per standard deviation. The component chips on each row use the same scale.</p>
+  <p><b>ESPN win rates</b> count only when ESPN publishes the player (top 10–20 per list). The input is his place on the list, (list size + 1 − rank) ÷ list size, and 0 if he isn't listed. So an unlisted player isn't penalized beyond missing the bonus.</p>
+  <p><b>Week-to-week arrows.</b> Every data refresh stores that week's full rankings in <a href="https://github.com/Coleslaw510/nfl-player-stats-hub/blob/main/data/rankings_history.json" target="_blank" rel="noopener">data/rankings_history.json</a> and compares them with the latest earlier week (now Week ${m.through_week} vs Week ${m.prev_week ?? '—'}). <span class="mv up">▲3</span> = up 3 spots, <span class="mv dn">▼2</span> = down 2, <span class="mv eq">–</span> = same spot, <span class="mv new">NEW</span> = not ranked at that position the week before (newly qualified, back from injury or changed position). The Week 7 baseline was rebuilt with exactly this method from data through Week 7, including ESPN's Week 7 win-rate article from the Internet Archive.</p>
+  <p><b>Caveats.</b> Offensive linemen have no public individual box-score stats. Their ranking leans on ESPN's top-20/top-10 block win-rate lists, playing time and their current team's sack rate and run-game efficiency, so it's the roughest list here. Coverage numbers are PFR charting (targets in coverage), which is noisy over a half season. Tight-end blocking is only reflected through snap share. Injured or inactive players drop out until they meet the games-played qualifier again.</p>
+  ${GROUPS.map(g => { const M = m.method[g]; return `<div class="cat-h">${GNAME[g]} <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· qualifier: ${M.qual}</span></div><table class="prw">${M.comps.map(c => `<tr><td>${c.w}% ${c.l}</td><td class="muted">${c.stats.map(s => `${lab(s)}${s.lower ? ' (lower is better)' : ''}${s.shrink ? ` <i>[shrunk by ${s.shrink.replace('def_snaps', 'def. snaps').replace('tgt_allowed', 'coverage targets')}]</i>` : ''} ×${s.w}`).join(' · ')}</td></tr>`).join('')}</table>`; }).join('')}`; }); }
+
 // ---------- glossary / footer ----------
 function glossary() {
   const cats = {}; D.stats.forEach(s => (cats[s.cat] ??= []).push(s));
@@ -369,6 +424,9 @@ $('#cmp-share').onclick = () => { const u = location.origin + location.pathname 
 $$('#season-seg button').forEach(b => b.onclick = async () => {
   const h = location.hash.replace(/&season=\d+/, ''); const s = +b.dataset.s;
   await setSeason(s, true); OTHER = await load(s === 2026 ? 2025 : 2026); go(h + (s !== 2026 ? `&season=${s}` : '')); route(); });
+$('#pr-chips').onclick = e => { const b = e.target.closest('button[data-g]'); if (b) go(b.dataset.g === 'all' ? '#rankings' : `#rankings=${b.dataset.g}`); };
+$('#pr-q').oninput = () => { prLimit = 50; drawPR(); }; $('#pr-sub').onchange = () => { prLimit = 50; drawPR(); }; $('#pr-more').onclick = () => { prLimit += 100; drawPR(); };
+$('#pr-body').onclick = e => { const tr = e.target.closest('tr[data-id]'); if (tr) go(`#player=${tr.dataset.id}`); };
 window.addEventListener('hashchange', route);
 Chart.defaults.font.family = 'Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif'; Chart.defaults.color = '#8b97ad';
 (async () => {

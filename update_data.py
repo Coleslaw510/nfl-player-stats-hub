@@ -72,12 +72,14 @@ def find_espn_article(season):
         print(f"  ESPN search failed ({e}); using known URL", file=sys.stderr)
     return ESPN_WR.get(season)
 
-def espn_win_rates(season, offline):
-    url = find_espn_article(season)
+def espn_win_rates(season, offline, html=None):
+    """html: optional saved copy of the article (e.g. an archived earlier-week version, used for ranking baselines)."""
+    url = ESPN_WR.get(season) if html else find_espn_article(season)
     if not url: return None, []
-    path = fetch(url, f"raw/espn_wr_{season}.html", offline)
+    path = html or fetch(url, f"raw/espn_wr_{season}.html", offline)
     soup = BeautifulSoup(open(path, encoding="utf-8").read(), "lxml")
-    h1 = soup.find("h1"); headline = h1.get_text(" ", strip=True) if h1 else ""
+    hs = [h.get_text(" ", strip=True) for h in soup.find_all("h1")] + [soup.title.get_text(" ", strip=True) if soup.title else ""]
+    headline = next((h for h in hs if "win rate" in h.lower()), hs[0] if hs else "").replace(" - ESPN", "")
     if str(season) not in headline: raise RuntimeError(f"ESPN article headline {headline!r} is not {season}")
     txt = soup.get_text(" ", strip=True)
     m = re.search(r"Last updated:\s*(.{5,80}?(?:a\.m\.|p\.m\.)(?: ET)?)", txt)
@@ -226,6 +228,8 @@ def main():
     ap.add_argument("--through-week", type=int); ap.add_argument("--offline", action="store_true")
     ap.add_argument("--out-dir", default="data"); ap.add_argument("--no-espn", action="store_true")
     ap.add_argument("--no-trade-values", action="store_true", help="skip the trade-value model step")
+    ap.add_argument("--espn-html", help="parse this saved ESPN win-rate article instead of fetching the live one")
+    ap.add_argument("--no-rankings", action="store_true", help="skip the power-rankings step")
     a = ap.parse_args(); SEA = a.season
     os.makedirs("raw", exist_ok=True); os.makedirs(a.out_dir, exist_ok=True)
     games = pd.read_csv(fetch(GAMES_URL, "raw/games.csv", a.offline))
@@ -278,6 +282,10 @@ def main():
     rus = ru.groupby("rusher_id").agg(epa_rush=("epa", "mean"), succ_rush=("success", "mean"))
     tg_ = pbp[(pbp.pass_attempt == 1) & (pbp.sack == 0) & pbp.receiver_id.notna()]
     rcv = tg_.groupby("receiver_id").agg(epa_tgt=("epa", "mean"), adot_rec=("air_yards", "mean"))
+    _dbk = pbp[pbp.qb_dropback == 1]; _rr = pbp[(pbp.rush == 1) & (pbp.qb_scramble == 0)]
+    team_off = pd.DataFrame({"sack_rate": _dbk.groupby("posteam").sack.mean() * 100,
+                             "rush_epa": _rr.groupby("posteam").epa.mean(), "rush_succ": _rr.groupby("posteam").success.mean() * 100})
+    team_off = {t_: {k_: round(float(v_), 4) for k_, v_ in r_.items()} for t_, r_ in team_off.iterrows()}
     team_db = pbp[pbp.qb_dropback == 1].groupby(["game_id", "posteam"]).size().to_dict()
     team_att = pbp[(pbp.pass_attempt == 1) & (pbp.sack == 0)].groupby(["game_id", "posteam"]).size().to_dict()
     # NGS weighted
@@ -298,7 +306,7 @@ def main():
     # ESPN
     wr_meta, wr_rows = None, []
     try:
-        if not a.no_espn: wr_meta, wr_rows = espn_win_rates(SEA, a.offline)
+        if not a.no_espn: wr_meta, wr_rows = espn_win_rates(SEA, a.offline, a.espn_html)
     except Exception as e:
         print("ESPN win rates failed:", e, file=sys.stderr)
 
@@ -501,13 +509,16 @@ def main():
                 team_games=tg, players=len(players), team_source="Current team: ESPN team rosters (fetched at build) > nflverse weekly roster > trades/team_overrides.csv overrides win; 'pt' = earlier 2026 teams",
                 team_changes=team_changes, with_stats=sum(1 for p in players if p["g"]), qualifiers=QUAL_TEXT,
                 espn=dict(meta=wr_meta, matched=wr_matched, total=len(wr_rows), unmatched=wr_unmatched),
-                pfr_def_weeks=sorted(int(w) for w in pfr.week.unique()) if len(pfr) else [], counts=counts)
+                team_off=team_off, pfr_def_weeks=sorted(int(w) for w in pfr.week.unique()) if len(pfr) else [], counts=counts)
     json.dump(clean(dict(meta=meta, stats=S, players=players)), open(f"{a.out_dir}/players_{SEA}.json", "w"), separators=(",", ":"), allow_nan=False)
     print(f"wrote {a.out_dir}/players_{SEA}.json: {len(players)} players ({meta['with_stats']} with stats); ESPN rows matched {wr_matched}/{len(wr_rows)}",
           ("unmatched: " + ", ".join(wr_unmatched)) if wr_unmatched else "")
 
     if a.out_dir == "data" and not a.no_trade_values and not a.no_espn:
         trade_values(SEA, a.offline)
+    if a.out_dir == "data" and not a.no_rankings:
+        import power_rankings
+        power_rankings.roll(f"{a.out_dir}/players_{SEA}.json", "data/rankings_history.json", f"data/rankings_{SEA}.json")
 
 NFLDATA = "https://raw.githubusercontent.com/nflverse/nfldata/master/data"
 CAP_LAB = "https://coleslaw510.github.io/nfl-salary-cap/data.json"

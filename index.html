@@ -23,6 +23,7 @@
   </div>
   <nav class="tabs" id="tabs">
     <a href="#leaders" data-tab="leaders">Leaders</a>
+    <a href="#rankings" data-tab="rankings">Power Rankings</a>
     <a href="#compare" data-tab="compare">Compare</a>
     <a href="#player" data-tab="player">Player</a>
     <a href="#table" data-tab="table">Leaderboards</a>
@@ -61,6 +62,24 @@
       <p class="note" id="sc-note"></p>
       <div class="chart-box tall"><canvas id="sc-chart"></canvas></div>
     </div>
+  </section>
+
+  <!-- POWER RANKINGS -->
+  <section class="tab" id="tab-rankings" hidden>
+    <div class="card">
+      <div class="card-head">
+        <h2>Position power rankings <span class="muted small" id="pr-asof"></span></h2>
+        <div class="ctrls">
+          <select id="pr-sub" aria-label="Position filter" hidden></select>
+          <input id="pr-q" type="search" placeholder="Filter by name or team">
+        </div>
+      </div>
+      <div class="pr-chips" id="pr-chips" role="tablist"></div>
+      <p class="note" id="pr-note"></p>
+      <div id="pr-body"></div>
+      <button class="btn more" id="pr-more" hidden>Show more</button>
+    </div>
+    <div class="card"><div class="card-head"><h2>How the power rankings work</h2></div><div id="pr-how" class="prose"></div></div>
   </section>
 
   <!-- COMPARE -->

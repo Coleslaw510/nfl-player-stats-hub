@@ -1,6 +1,6 @@
 # NFL Player Stats Hub
 
-A fast, mobile-friendly static dashboard covering individual NFL **players**: leader charts, typeahead player search with league ranks and percentiles, a 2–4 player comparison tool with shareable links, full sortable leaderboards, a **trade value estimator** (what a player is worth in draft picks, calibrated on real trades), and a stat glossary. Covers the 2026 season (updated weekly) plus 2025 for context.
+A fast, mobile-friendly static dashboard covering individual NFL **players**: leader charts, typeahead player search with league ranks and percentiles, a 2–4 player comparison tool with shareable links, full sortable leaderboards, **position power rankings** with week-to-week movement arrows, a **trade value estimator** (what a player is worth in draft picks, calibrated on real trades), and a stat glossary. Covers the 2026 season (updated weekly) plus 2025 for context.
 
 **Live:** https://coleslaw510.github.io/nfl-player-stats-hub/
 **Example compare:** https://coleslaw510.github.io/nfl-player-stats-hub/#compare=micah-parsons,montez-sweat&season=2025
@@ -9,6 +9,8 @@ A fast, mobile-friendly static dashboard covering individual NFL **players**: le
 - `index.html`, `style.css`, `app.js`: front end (Chart.js via CDN, no build step).
 - `data/players_<season>.json`: one data file per season (stats, ranks, percentiles, ESPN win rates, metadata).
 - `update_data.py`: refresh script. It downloads the sources into `raw/` (gitignored) and rebuilds the JSON.
+- `power_rankings.py`: position power rankings (composite score per position) and the weekly history roll.
+- `data/rankings_<season>.json`: current rankings with movement vs the previous week; `data/rankings_history.json`: every week's full rankings, `{season: {through_week: {group: {player_id: [rank, score]}}}}`.
 - `data/trade_values_<season>.json`: trade-value estimate for every player with enough data (value, range, confidence, drivers, 3 comparable trades).
 - `trades/trades.csv`: the calibration dataset of real veteran player-for-picks trades (committed).
 - `trades/manual_trades_2026.csv`: 2026 trades made after the nflverse trade log's last entry, each row with a source URL.
@@ -23,9 +25,31 @@ A fast, mobile-friendly static dashboard covering individual NFL **players**: le
     .venv/bin/python update_data.py --season 2026 --through-week 8   # or pin a week
     git add data && git commit -m "Data through week N" && git push
 
+Each refresh also runs `power_rankings.py`: it scores the week, stores it in `data/rankings_history.json` (re-running the same week overwrites that week only) and compares it with the latest earlier week, which drives the ▲/▼ arrows. Commit `data/rankings_*.json` with the rest of `data/`. Skip with `--no-rankings`.
+
 If ESPN can't be reached, the script keeps the previous build's win rates and marks them stale.
 
 `update_data.py` also refreshes the trade-value step for the season it builds: it re-downloads the nflverse trade log, draft value chart and Over The Cap contracts, builds any missing prior seasons into `raw/hist/` (2018 onward, first run only, a few minutes), then runs `trades/build_trades.py` and `trades/model.py`. Skip it with `--no-trade-values`. New trades after the nflverse log's last entry go in `trades/manual_trades_2026.csv` with a source URL.
+
+## Power rankings
+- **Tab:** `#rankings` (top 5 at every position) and `#rankings=<QB|RB|WR|TE|OL|EDGE|IDL|LB|CB|S>` (full list, sortable by rank, with key stats and component scores). Each player card shows his power ranking.
+- **Score (0–100):** within each position's qualified pool, every input stat becomes a z-score (direction-corrected, capped at ±3, missing = average). Rate stats are shrunk toward average for small samples, z × n/(n+k), where n is dropbacks, carries, targets, coverage targets or defensive snaps. Stats are averaged into weighted components, the total is shrunk for games played (× g/(g+1.5)), then standardized: 50 = average qualified player, 16 points per SD.
+- **Components (weights):**
+  - QB: efficiency 45 (EPA/dropback, ANY/A, success rate, CPOE), passing production 25, rushing 10, ball security & sacks 10, availability 10.
+  - RB: rushing production 25, rushing efficiency 25 (EPA/rush, RYOE/att, success, YPC), receiving 20, scrimmage total 15, availability & role 15.
+  - WR: production 30, efficiency 30 (YPRR proxy, EPA/target, yds/target, catch %), earning targets 20, NGS separation/YACOE 8, availability & role 12.
+  - TE: production 28, efficiency 25, targets 17, NGS 5, snap share 15, availability 10.
+  - OL: ESPN pass block win rate 30, ESPN run block win rate 20, playing time 25, team sack rate 12.5, team designed-run EPA/success 12.5.
+  - EDGE: pass rush 45 (pressures/100 snaps, pressures/g, sacks/g, hits, ESPN PRWR), run defense 20 (ESPN RSWR, TFL, tackles), playmaking 10, tackling 10, availability 15.
+  - IDL: pass rush 40, run defense 30, playmaking 5, tackling 10, availability 15.
+  - LB: tackling & run defense 35, coverage 25, pass rush 15, playmaking 5, availability 20.
+  - CB: coverage 55 (rating/yds/cmp% allowed, targets per snap, PD, INT), tackling 15, playmaking 10, availability 20.
+  - S: coverage 40, tackling & run support 30, playmaking 10, availability 20.
+  - Exact stat weights and shrink constants are in `power_rankings.py` (`SPEC`) and on the page.
+- **ESPN win rates** count by list standing, (size + 1 − rank)/size, and 0 if he isn't on ESPN's published top-N list.
+- **Qualifiers:** QB ≥ 14 att per team game; RB ≥ 8 carries+targets per team game and ≥ 25% snaps; WR ≥ 3 targets per team game and ≥ 35% snaps; TE ≥ 1.5 targets per team game and ≥ 35% snaps; OL ≥ 50% snaps; EDGE/IDL ≥ 35%; LB ≥ 40%; CB/S ≥ 45%; everyone ≥ half his team's games.
+- **Movement:** ▲n / ▼n = spots gained or lost vs the previous stored week, – = same spot, NEW = not ranked at that position that week. The Week 7 baseline was rebuilt with the same method (`update_data.py --through-week 7 --out-dir raw/wk7 --no-trade-values --espn-html <ESPN's Week 7 article from the Internet Archive>`, then `power_rankings.py --baseline raw/wk7/players_2026.json`). Use the same recipe to backfill any missed week.
+- **Caveats:** OL has no public individual box-score stats, so its list leans on ESPN's top-N lists, snaps and team context. Coverage stats are PFR charting and noisy over half a season.
 
 ## Trade value estimator
 - **Units:** Over The Cap (Fitzgerald-Spielberger) draft-value points from nflverse `draft_values.csv` (pick #1 = 3,000, #16 = 1,540, #32 = 1,175, #64 = 810, #96 = 596, #224 = 150). The card also shows the simplest 1–3 pick combination with about the same points (e.g. "≈ late 1st + 3rd").
@@ -66,6 +90,7 @@ Ranks and percentiles compare a player only with qualified players in his own po
 | Missed tackle % | ≥ 2 tackle attempts per team game |
 
 ## URL routes
+- `#rankings`, `#rankings=WR` (power rankings)
 - `#leaders`, `#table`, `#trade` (trade value leaderboard), `#glossary` (`#glossary=trade` for the trade-value explainer)
 - `#player=<gsis id or name-slug>`
 - `#compare=name-1,name-2[,name-3,name-4]`
