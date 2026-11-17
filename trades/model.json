@@ -6,31 +6,31 @@
   "position": 4.0,
   "other": 0.5
  },
- "n_trades": 309,
- "n_dataset": 312,
+ "n_trades": 310,
+ "n_dataset": 313,
  "date_range": [
   "2019-03-13",
   "2026-11-10"
  ],
  "coef": {
-  "const": 4.9178,
-  "quality": 0.3088,
-  "age_dev": -0.0369,
-  "cap": 1.1019,
-  "rookie": 0.1029,
-  "control": 0.1433,
-  "expiring": 0.1194,
-  "pedigree": 0.1382,
-  "pos_QB": 0.0946,
-  "pos_RB": 0.1044,
-  "pos_WR": 0.1219,
-  "pos_TE": 0.1134,
-  "pos_OL": -0.0171,
-  "pos_EDGE": -0.0478,
-  "pos_IDL": 0.0755,
-  "pos_LB": -0.3312,
-  "pos_CB": -0.0827,
-  "pos_S": -0.031
+  "const": 4.9127,
+  "quality": 0.3224,
+  "age_dev": -0.0389,
+  "cap": 1.0868,
+  "rookie": 0.0786,
+  "control": 0.1487,
+  "expiring": 0.1362,
+  "pedigree": 0.1293,
+  "pos_QB": 0.1027,
+  "pos_RB": 0.149,
+  "pos_WR": 0.1381,
+  "pos_TE": 0.1185,
+  "pos_OL": -0.0326,
+  "pos_EDGE": -0.0527,
+  "pos_IDL": 0.0767,
+  "pos_LB": -0.3367,
+  "pos_CB": -0.1199,
+  "pos_S": -0.0433
  },
  "star": {
   "q_lo": 55,
@@ -53,89 +53,89 @@
    "LB": 0.6,
    "RB": 0.4
   },
-  "k": 0.2582,
-  "n_eff": 9.95,
-  "k_raw": 0.2842,
-  "max_multiplier": 1.295
+  "k": 0.2491,
+  "n_eff": 10.04,
+  "k_raw": 0.2739,
+  "max_multiplier": 1.283
  },
  "star_backtest": {
   "before": {
    "loo": {
-    "median_miss": 1.634,
-    "within_x2": 0.66
+    "median_miss": 1.652,
+    "within_x2": 0.681
    },
    "time_split": {
-    "median_miss": 1.669,
-    "within_x2": 0.655
+    "median_miss": 1.71,
+    "within_x2": 0.632
    },
    "big_trades_1500plus": {
     "n": 17,
-    "median_ratio_actual_over_pred": 1.731,
-    "median_miss": 1.731,
-    "within_x2": 0.588
+    "median_ratio_actual_over_pred": 1.887,
+    "median_miss": 1.887,
+    "within_x2": 0.647
    },
    "high_quality_prime": {
-    "n": 20,
-    "median_ratio_actual_over_pred": 0.879,
-    "median_miss": 1.631,
-    "within_x2": 0.85
+    "n": 21,
+    "median_ratio_actual_over_pred": 0.946,
+    "median_miss": 1.713,
+    "within_x2": 0.905
    },
    "star_tier_over_half": {
     "n": 18,
-    "median_ratio_actual_over_pred": 1.101,
-    "median_miss": 1.537,
+    "median_ratio_actual_over_pred": 1.098,
+    "median_miss": 1.606,
     "within_x2": 0.722
    },
    "depth_under_300": {
-    "n": 184,
-    "median_ratio_actual_over_pred": 0.751,
-    "median_miss": 1.615,
-    "within_x2": 0.696
+    "n": 185,
+    "median_ratio_actual_over_pred": 0.742,
+    "median_miss": 1.634,
+    "within_x2": 0.703
    },
    "recent_2025plus": {
     "n": 87,
-    "median_ratio_actual_over_pred": 1.178,
-    "median_miss": 1.633,
-    "within_x2": 0.609
+    "median_ratio_actual_over_pred": 1.225,
+    "median_miss": 1.654,
+    "within_x2": 0.621
    }
   },
   "after": {
    "loo": {
-    "median_miss": 1.642,
-    "within_x2": 0.667
+    "median_miss": 1.637,
+    "within_x2": 0.681
    },
    "time_split": {
-    "median_miss": 1.669,
-    "within_x2": 0.655
+    "median_miss": 1.748,
+    "within_x2": 0.632
    },
    "big_trades_1500plus": {
     "n": 17,
-    "median_ratio_actual_over_pred": 1.606,
-    "median_miss": 1.606,
+    "median_ratio_actual_over_pred": 1.596,
+    "median_miss": 1.596,
     "within_x2": 0.706
    },
    "high_quality_prime": {
-    "n": 20,
-    "median_ratio_actual_over_pred": 0.754,
-    "median_miss": 1.554,
-    "within_x2": 0.8
+    "n": 21,
+    "median_ratio_actual_over_pred": 0.84,
+    "median_miss": 1.596,
+    "within_x2": 0.857
    },
    "star_tier_over_half": {
     "n": 18,
-    "median_ratio_actual_over_pred": 0.865,
-    "median_miss": 1.554,
+    "median_ratio_actual_over_pred": 0.875,
+    "median_miss": 1.589,
     "within_x2": 0.722
    },
    "depth_under_300": {
-    "n": 184,
-    "median_ratio_actual_over_pred": 0.751,
-    "median_miss": 1.615,
-    "within_x2": 0.696
+    "n": 185,
+    "median_ratio_actual_over_pred": 0.742,
+    "median_miss": 1.634,
+    "within_x2": 0.703
    },
    "recent_2025plus": {
     "n": 87,
-    "median_ratio_actual_over_pred": 1.175,
-    "median_miss": 1.684,
+    "median_ratio_actual_over_pred": 1.218,
+    "median_miss": 1.712,
     "within_x2": 0.632
    }
   }
@@ -146,17 +146,17 @@
    "player": "Jordan Davis",
    "group": "IDL",
    "actual": 2055,
-   "before": 690,
-   "after": 711,
-   "tier": 0.1
+   "before": 677,
+   "after": 691,
+   "tier": 0.07
   },
   {
    "date": "2026-10-29",
    "player": "Jeffery Simmons",
    "group": "IDL",
    "actual": 2739,
-   "before": 1698,
-   "after": 2081,
+   "before": 1722,
+   "after": 2094,
    "tier": 0.85
   },
   {
@@ -164,8 +164,8 @@
    "player": "A.J. Brown",
    "group": "WR",
    "actual": 1344,
-   "before": 1527,
-   "after": 2140,
+   "before": 1581,
+   "after": 2201,
    "tier": 1.0
   },
   {
@@ -173,8 +173,8 @@
    "player": "Jonathan Greenard",
    "group": "EDGE",
    "actual": 996,
-   "before": 786,
-   "after": 1031,
+   "before": 779,
+   "after": 1011,
    "tier": 1.0
   },
   {
@@ -182,8 +182,8 @@
    "player": "Dexter Lawrence",
    "group": "IDL",
    "actual": 1787,
-   "before": 699,
-   "after": 794,
+   "before": 707,
+   "after": 799,
    "tier": 0.54
   },
   {
@@ -191,17 +191,17 @@
    "player": "Jaylen Waddle",
    "group": "WR",
    "actual": 2232,
-   "before": 1039,
-   "after": 1236,
-   "tier": 0.76
+   "before": 1075,
+   "after": 1275,
+   "tier": 0.77
   },
   {
    "date": "2026-03-04",
    "player": "Trent McDuffie",
    "group": "CB",
    "actual": 2715,
-   "before": 1093,
-   "after": 1341,
+   "before": 1055,
+   "after": 1278,
    "tier": 0.98
   },
   {
@@ -209,26 +209,26 @@
    "player": "George Pickens",
    "group": "WR",
    "actual": 780,
-   "before": 1143,
-   "after": 1314,
-   "tier": 0.52
+   "before": 1163,
+   "after": 1335,
+   "tier": 0.53
   },
   {
    "date": "2025-03-09",
    "player": "D.K. Metcalf",
    "group": "WR",
    "actual": 909,
-   "before": 2001,
-   "after": 2623,
-   "tier": 0.94
+   "before": 2074,
+   "after": 2710,
+   "tier": 0.95
   },
   {
    "date": "2023-04-24",
    "player": "Aaron Rodgers",
    "group": "QB",
    "actual": 1965,
-   "before": 1588,
-   "after": 1588,
+   "before": 1545,
+   "after": 1545,
    "tier": 0.0
   },
   {
@@ -236,8 +236,8 @@
    "player": "Christian McCaffrey",
    "group": "RB",
    "actual": 2445,
-   "before": 508,
-   "after": 508,
+   "before": 538,
+   "after": 538,
    "tier": 0.0
   },
   {
@@ -245,8 +245,8 @@
    "player": "A.J. Brown",
    "group": "WR",
    "actual": 2048,
-   "before": 2313,
-   "after": 2997,
+   "before": 2395,
+   "after": 3074,
    "tier": 1.0
   },
   {
@@ -254,8 +254,8 @@
    "player": "Tyreek Hill",
    "group": "WR",
    "actual": 3214,
-   "before": 2892,
-   "after": 3758,
+   "before": 2971,
+   "after": 3825,
    "tier": 1.0
   },
   {
@@ -263,8 +263,8 @@
    "player": "Deshaun Watson",
    "group": "QB",
    "actual": 4519,
-   "before": 4473,
-   "after": 5805,
+   "before": 4577,
+   "after": 5883,
    "tier": 1.0
   },
   {
@@ -272,17 +272,17 @@
    "player": "Davante Adams",
    "group": "WR",
    "actual": 2281,
-   "before": 2744,
-   "after": 3460,
-   "tier": 0.9
+   "before": 1161,
+   "after": 1429,
+   "tier": 0.81
   },
   {
    "date": "2021-11-02",
    "player": "Von Miller",
    "group": "EDGE",
    "actual": 1653,
-   "before": 955,
-   "after": 955,
+   "before": 1023,
+   "after": 1023,
    "tier": 0.0
   },
   {
@@ -290,8 +290,8 @@
    "player": "Carson Wentz",
    "group": "QB",
    "actual": 1628,
-   "before": 1453,
-   "after": 1453,
+   "before": 1418,
+   "after": 1418,
    "tier": 0.0
   },
   {
@@ -299,8 +299,8 @@
    "player": "DeForest Buckner",
    "group": "EDGE",
    "actual": 1649,
-   "before": 1454,
-   "after": 1885,
+   "before": 1480,
+   "after": 1901,
    "tier": 1.0
   },
   {
@@ -308,8 +308,8 @@
    "player": "Stefon Diggs",
    "group": "WR",
    "actual": 2190,
-   "before": 1082,
-   "after": 1191,
+   "before": 1134,
+   "after": 1245,
    "tier": 0.37
   },
   {
@@ -317,8 +317,8 @@
    "player": "Jalen Ramsey",
    "group": "CB",
    "actual": 2884,
-   "before": 394,
-   "after": 394,
+   "before": 435,
+   "after": 435,
    "tier": 0.0
   },
   {
@@ -326,45 +326,45 @@
    "player": "Frank Clark",
    "group": "EDGE",
    "actual": 1871,
-   "before": 970,
-   "after": 1165,
+   "before": 992,
+   "after": 1183,
    "tier": 0.7
   }
  ],
  "stretch": {
-  "mu": 5.6683,
-  "s": 1.2296
+  "mu": 5.6723,
+  "s": 1.2253
  },
- "sigma_log": 0.7101,
- "weighted_r2": 0.44,
+ "sigma_log": 0.7022,
+ "weighted_r2": 0.449,
  "loo": {
-  "n": 309,
-  "median_abs_log": 0.4958855356628007,
-  "median_ratio": 1.641951602159946,
-  "within_x1_5": 0.39158576051779936,
-  "within_x2": 0.6666666666666666,
-  "within_range": 0.686084142394822,
-  "spearman": 0.5599849108608476
+  "n": 310,
+  "median_abs_log": 0.4930724176886936,
+  "median_ratio": 1.6373390894083701,
+  "within_x1_5": 0.4161290322580645,
+  "within_x2": 0.6806451612903226,
+  "within_range": 0.6806451612903226,
+  "spearman": 0.5692096479928886
  },
  "time_split": {
   "train": "before 2025-03-01",
   "test": "2025-03-01 onward",
   "n": 87,
-  "median_abs_log": 0.5122787234485475,
-  "median_ratio": 1.66909025990576,
-  "within_x1_5": 0.3793103448275862,
-  "within_x2": 0.6551724137931034,
-  "within_range": 0.6551724137931034,
-  "spearman": 0.6326870057836222
+  "median_abs_log": 0.5582360416432568,
+  "median_ratio": 1.7475871089602275,
+  "within_x1_5": 0.3563218390804598,
+  "within_x2": 0.632183908045977,
+  "within_range": 0.632183908045977,
+  "spearman": 0.6488694963165839
  },
- "baseline_median_abs_log": 0.6249080622608876,
+ "baseline_median_abs_log": 0.6137816574695263,
  "xbar": {
-  "quality": -0.12374038648500177,
-  "age_dev": 0.9697779862746628,
-  "cap": 0.4398589233415951,
-  "rookie": 0.3147317325163204,
-  "control": 1.5268488085191085,
-  "expiring": 0.6457377260770166,
-  "pedigree": -0.046702127032240956
+  "quality": -0.10390882137957276,
+  "age_dev": 0.9749234296498198,
+  "cap": 0.44194133445021827,
+  "rookie": 0.3162964093893238,
+  "control": 1.52678344467668,
+  "expiring": 0.6493762838273011,
+  "pedigree": -0.046785485470357296
  }
 }
